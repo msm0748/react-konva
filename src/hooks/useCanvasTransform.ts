@@ -13,31 +13,39 @@ export default function useCanvasTransform() {
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
 
-    const stage = e.target.getStage();
-    const oldScale = scale;
+    // cmd(macOS) 또는 ctrl(Windows) 키가 눌렸는지 확인
+    const isZoomAction = e.evt.metaKey || e.evt.ctrlKey;
 
-    // 마우스 휠 방향에 따라 확대/축소 비율 조정
-    const scaleBy = 1.1;
-    const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+    if (isZoomAction) {
+      // 확대/축소 로직
+      const stage = e.target.getStage();
+      const oldScale = scale;
+      const scaleBy = 1.1;
+      const newScale =
+        e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
 
-    // 스테이지의 포인터 위치 가져오기
-    const pointer = stage?.getPointerPosition();
+      const pointer = stage?.getPointerPosition();
+      if (!pointer) return;
 
-    if (!pointer) return;
+      const mousePointTo = {
+        x: (pointer.x - position.x) / oldScale,
+        y: (pointer.y - position.y) / oldScale,
+      };
 
-    // 현재 마우스 포인터 위치에서의 확대/축소를 위한 오프셋 계산
-    const mousePointTo = {
-      x: (pointer.x - position.x) / oldScale,
-      y: (pointer.y - position.y) / oldScale,
-    };
+      const newPos = {
+        x: pointer.x - mousePointTo.x * newScale,
+        y: pointer.y - mousePointTo.y * newScale,
+      };
 
-    const newPos = {
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
-    };
-
-    setScale(newScale);
-    setPosition(newPos);
+      setScale(newScale);
+      setPosition(newPos);
+    } else {
+      // 상하 스크롤 로직
+      setPosition({
+        x: position.x,
+        y: position.y - e.evt.deltaY,
+      });
+    }
   };
 
   const handleDragStart = () => {
