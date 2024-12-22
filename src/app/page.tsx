@@ -1,4 +1,5 @@
 'use client';
+import Tools from '@/components/Tools';
 import dynamic from 'next/dynamic';
 
 const Canvas = dynamic(() => import('@/components/Canvas'), {
@@ -6,5 +7,10 @@ const Canvas = dynamic(() => import('@/components/Canvas'), {
 });
 
 export default function Home() {
-  return <Canvas></Canvas>;
+  return (
+    <div className="relative h-screen w-screen">
+      <Tools />
+      <Canvas></Canvas>
+    </div>
+  );
 }
