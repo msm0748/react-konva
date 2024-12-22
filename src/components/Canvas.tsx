@@ -26,15 +26,18 @@ export default function Canvas() {
 
   const handleStageClick = (e) => {
     if (isFinished) return;
-
-    // Circle을 클릭했을 때는 새 점을 추가하지 않음
     if (e.target instanceof Konva.Circle) return;
 
     const stage = e.target.getStage();
     const pointerPosition = stage.getPointerPosition();
 
-    // 새로운 점 추가
-    const newPoints = [...points, pointerPosition.x, pointerPosition.y];
+    if (!pointerPosition) return;
+
+    // scale과 position을 고려한 실제 좌표 계산
+    const actualX = (pointerPosition.x - position.x) / scale;
+    const actualY = (pointerPosition.y - position.y) / scale;
+
+    const newPoints = [...points, actualX, actualY];
     setPoints(newPoints);
   };
 
