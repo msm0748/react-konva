@@ -1,4 +1,6 @@
 'use client';
+
+import ImageControlPanel from '@/components/ImageControlPanel';
 import Tools from '@/components/Tools';
 import dynamic from 'next/dynamic';
 
@@ -11,6 +13,7 @@ export default function Home() {
     <div className="relative h-screen w-screen">
       <Tools />
       <Canvas></Canvas>
+      <ImageControlPanel />
     </div>
   );
 }

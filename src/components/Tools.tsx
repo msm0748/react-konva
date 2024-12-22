@@ -1,7 +1,7 @@
 import { PiPolygonLight } from 'react-icons/pi';
 import { LiaHandPaper } from 'react-icons/lia';
 import { LuMousePointer2 } from 'react-icons/lu';
-import useCanvasStore from '@/stores/canvasStore';
+import useCanvasStore from '@/stores/useCanvasStore';
 
 export default function Tools() {
   const { selectedTool, setSelectedTool } = useCanvasStore();

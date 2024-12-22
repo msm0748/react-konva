@@ -1,6 +1,6 @@
 'use client';
 
-import useCanvasStore from '@/stores/canvasStore';
+import useCanvasStore from '@/stores/useCanvasStore';
 import Konva from 'konva';
 import { useEffect, useState } from 'react';
 

@@ -6,7 +6,7 @@ import Konva from 'konva';
 import ImageLayer from './ImageLayer';
 import useCanvasMouseStyle from '@/hooks/useCanvasMouseStyle';
 import useCanvasTransform from '@/hooks/useCanvasTransform';
-import useCanvasStore from '@/stores/canvasStore';
+import useCanvasStore from '@/stores/useCanvasStore';
 
 export default function Canvas() {
   const stageRef = useRef<Konva.Stage>(null);
@@ -79,7 +79,7 @@ export default function Canvas() {
       y={position.y}
     >
       <ImageLayer />
-      <Layer>
+      <Layer onClick={() => console.log('클릭')}>
         {/* 선 그리기 */}
         <Line
           points={points}

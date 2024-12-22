@@ -1,6 +1,6 @@
 'use client';
 
-import useCanvasStore from '@/stores/canvasStore';
+import useCanvasStore from '@/stores/useCanvasStore';
 import { useEffect } from 'react';
 
 export default function useCanvasMouseStyle() {

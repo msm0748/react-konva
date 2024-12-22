@@ -1,7 +1,7 @@
 import { Action, MouseCursor, Position, Tool } from '@/types/Canvas';
 import { create } from 'zustand';
 
-interface CanvasStore {
+interface Props {
   selectedTool: Tool;
   action: Action;
   position: Position;
@@ -14,7 +14,7 @@ interface CanvasStore {
   setMouseCursor: (mouseCursor: MouseCursor) => void;
 }
 
-const useCanvasStore = create<CanvasStore>((set) => ({
+const useCanvasStore = create<Props>((set) => ({
   selectedTool: 'select',
   action: 'none',
   position: { x: 0, y: 0 },
