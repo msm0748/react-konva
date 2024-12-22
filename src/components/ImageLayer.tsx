@@ -7,7 +7,7 @@ import { Image, Layer } from 'react-konva';
 import useImage from 'use-image';
 
 export default function ImageLayer() {
-  const [image] = useImage('https://konvajs.org/assets/lion.png', 'anonymous');
+  const [image] = useImage('/hq720.jpg', 'anonymous');
 
   const imageRef = useRef<Konva.Image>(null);
 
@@ -20,21 +20,12 @@ export default function ImageLayer() {
       img.filters([Konva.Filters.Brighten, Konva.Filters.Contrast]);
       img.brightness(brightness);
       img.contrast(contrast);
-      // console.log(img.getLayer());
       img.getLayer()?.batchDraw();
     }
   }, [image, brightness, contrast]);
   return (
     <Layer>
-      <Image
-        image={image}
-        alt="lion"
-        x={40}
-        y={80}
-        width={300}
-        height={300}
-        ref={imageRef}
-      />
+      <Image image={image} alt="lion" ref={imageRef} />
     </Layer>
   );
 }
