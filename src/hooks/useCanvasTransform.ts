@@ -5,7 +5,7 @@ import Konva from 'konva';
 import { useEffect, useState } from 'react';
 
 export default function useCanvasTransform() {
-  const { scale, setScale, position, setPosition, selectedTool } =
+  const { scale, setScale, viewPos, setViewPos, selectedTool } =
     useCanvasStore();
   const [isDragging, setIsDragging] = useState(false);
   const [draggable, setDraggable] = useState(false);
@@ -28,8 +28,8 @@ export default function useCanvasTransform() {
       if (!pointer) return;
 
       const mousePointTo = {
-        x: (pointer.x - position.x) / oldScale,
-        y: (pointer.y - position.y) / oldScale,
+        x: (pointer.x - viewPos.x) / oldScale,
+        y: (pointer.y - viewPos.y) / oldScale,
       };
 
       const newPos = {
@@ -38,12 +38,12 @@ export default function useCanvasTransform() {
       };
 
       setScale(newScale);
-      setPosition(newPos);
+      setViewPos(newPos);
     } else {
       // 상하 스크롤 로직
-      setPosition({
-        x: position.x,
-        y: position.y - e.evt.deltaY,
+      setViewPos({
+        x: viewPos.x,
+        y: viewPos.y - e.evt.deltaY,
       });
     }
   };
@@ -59,7 +59,7 @@ export default function useCanvasTransform() {
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     if (!isDragging) return;
     // 새로운 위치 계산
-    setPosition({
+    setViewPos({
       x: e.currentTarget.x(),
       y: e.currentTarget.y(),
     });

@@ -4,12 +4,12 @@ import { create } from 'zustand';
 interface Props {
   selectedTool: Tool;
   action: Action;
-  position: Position;
+  viewPos: Position;
   scale: number;
   mouseCursor: MouseCursor;
   setSelectedTool: (selectedTool: Tool) => void;
   setAction: (action: Action) => void;
-  setPosition: (position: Position) => void;
+  setViewPos: (position: Position) => void;
   setScale: (scale: number) => void;
   setMouseCursor: (mouseCursor: MouseCursor) => void;
 }
@@ -17,12 +17,12 @@ interface Props {
 const useCanvasStore = create<Props>((set) => ({
   selectedTool: 'select',
   action: 'none',
-  position: { x: 0, y: 0 },
+  viewPos: { x: 0, y: 0 },
   scale: 1,
   mouseCursor: 'default',
   setSelectedTool: (selectedTool) => set({ selectedTool }),
   setAction: (action) => set({ action }),
-  setPosition: (position) => set({ position }),
+  setViewPos: (position) => set({ viewPos: position }),
   setScale: (scale) => set({ scale }),
   setMouseCursor: (mouseCursor) => set({ mouseCursor }),
 }));

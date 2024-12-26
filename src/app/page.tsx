@@ -1,6 +1,6 @@
 'use client';
 
-import ImageControlPanel from '@/components/ImageControlPanel';
+import ImageControlPanel from '@/components/options/ImageControlPanel';
 import Tools from '@/components/Tools';
 import dynamic from 'next/dynamic';
 

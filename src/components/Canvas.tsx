@@ -1,25 +1,14 @@
 'use client';
 
-import { Layer, Stage, Line, Circle } from 'react-konva';
-import { useRef, useState } from 'react';
+import { Layer, Line, Circle } from 'react-konva';
+import { useState } from 'react';
 import Konva from 'konva';
 import ImageLayer from './ImageLayer';
-import useCanvasMouseStyle from '@/hooks/useCanvasMouseStyle';
-import useCanvasTransform from '@/hooks/useCanvasTransform';
 import useCanvasStore from '@/stores/useCanvasStore';
+import Stage from './konva/Stage';
 
 export default function Canvas() {
-  const stageRef = useRef<Konva.Stage>(null);
-  const mouseCursor = useCanvasMouseStyle();
-
-  const { position, scale } = useCanvasStore();
-  const {
-    handleWheel,
-    handleDragStart,
-    handleDragEnd,
-    handleDragMove,
-    draggable,
-  } = useCanvasTransform();
+  const { viewPos, scale } = useCanvasStore();
 
   const [points, setPoints] = useState([]);
   const [isFinished, setIsFinished] = useState(false);
@@ -34,8 +23,8 @@ export default function Canvas() {
     if (!pointerPosition) return;
 
     // scale과 position을 고려한 실제 좌표 계산
-    const actualX = (pointerPosition.x - position.x) / scale;
-    const actualY = (pointerPosition.y - position.y) / scale;
+    const actualX = (pointerPosition.x - viewPos.x) / scale;
+    const actualY = (pointerPosition.y - viewPos.y) / scale;
 
     const newPoints = [...points, actualX, actualY];
     setPoints(newPoints);
@@ -62,22 +51,7 @@ export default function Canvas() {
   };
 
   return (
-    <Stage
-      width={window.innerWidth}
-      height={window.innerHeight}
-      style={{ cursor: mouseCursor }}
-      draggable={draggable}
-      ref={stageRef}
-      onWheel={handleWheel}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragMove={handleDragMove}
-      onClick={handleStageClick}
-      scaleX={scale}
-      scaleY={scale}
-      x={position.x}
-      y={position.y}
-    >
+    <Stage onClick={handleStageClick}>
       <ImageLayer />
       <Layer onClick={() => console.log('클릭')}>
         {/* 선 그리기 */}
