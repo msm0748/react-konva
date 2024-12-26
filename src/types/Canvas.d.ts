@@ -38,3 +38,8 @@ export type MouseCursor =
   | 'not-allowed'
   | 'zoom-in'
   | 'zoom-out';
+
+export interface IPolygon {
+  points: number[];
+  isFinished: boolean;
+}

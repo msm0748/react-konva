@@ -6,74 +6,101 @@ import Konva from 'konva';
 import ImageLayer from './ImageLayer';
 import useCanvasStore from '@/stores/useCanvasStore';
 import Stage from './konva/Stage';
+import Polygon from './Polygon';
+import { IPolygon } from '@/types/Canvas';
 
 export default function Canvas() {
   const { viewPos, scale } = useCanvasStore();
 
-  const [points, setPoints] = useState([]);
-  const [isFinished, setIsFinished] = useState(false);
+  const [polygons, setPolygons] = useState<IPolygon[]>([]);
+  const [currentPolygon, setCurrentPolygon] = useState<number[]>([]);
 
-  const handleStageClick = (e) => {
-    if (isFinished) return;
-    if (e.target instanceof Konva.Circle) return;
-
-    const stage = e.target.getStage();
-    const pointerPosition = stage.getPointerPosition();
-
-    if (!pointerPosition) return;
-
-    // scale과 position을 고려한 실제 좌표 계산
-    const actualX = (pointerPosition.x - viewPos.x) / scale;
-    const actualY = (pointerPosition.y - viewPos.y) / scale;
-
-    const newPoints = [...points, actualX, actualY];
-    setPoints(newPoints);
+  const getActualPosition = (pointerPosition: Konva.Vector2d) => {
+    return {
+      x: (pointerPosition.x - viewPos.x) / scale,
+      y: (pointerPosition.y - viewPos.y) / scale,
+    };
   };
 
-  const handlePointClick = (e) => {
-    // 첫 번째 점을 클릭하면 폴리곤 완성
-    if (points.length >= 6) {
-      // 최소 3개의 점(6개의 좌표)이 있어야 함
-      const firstPoint = { x: points[0], y: points[1] };
-      const clickedPoint = e.target.position();
-
-      // 첫 번째 점과 클릭한 점 사이의 거리 계산
-      const distance = Math.sqrt(
-        Math.pow(firstPoint.x - clickedPoint.x, 2) +
-          Math.pow(firstPoint.y - clickedPoint.y, 2)
-      );
-
-      // 거리가 충분히 가까우면 폴리곤 완성
-      if (distance < 20) {
-        setIsFinished(true);
+  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    // Circle을 클릭한 경우 처리
+    if (e.target instanceof Konva.Circle) {
+      // 첫 번째 점을 클릭하면 폴리곤 완성
+      if (
+        currentPolygon.length >= 4 && // 최소 2개의 점이 있어야 함 (x,y 좌표 각각 2개)
+        Math.abs(e.target.x() - currentPolygon[0]) < 5 &&
+        Math.abs(e.target.y() - currentPolygon[1]) < 5
+      ) {
+        // 현재 폴리곤을 완성하고 저장
+        setPolygons((prev) => [
+          ...prev,
+          { points: [...currentPolygon], isFinished: true },
+        ]);
+        // 새로운 폴리곤 시작을 위해 초기화
+        setCurrentPolygon([]);
+        return;
       }
+      return;
     }
+
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const pointerPosition = stage.getPointerPosition();
+    if (!pointerPosition) return;
+
+    const { x, y } = getActualPosition(pointerPosition);
+
+    // 현재 그리고 있는 폴리곤에 점 추가
+    setCurrentPolygon((prev) => [...prev, x, y]);
   };
 
   return (
     <Stage onClick={handleStageClick}>
       <ImageLayer />
       <Layer onClick={() => console.log('클릭')}>
-        {/* 선 그리기 */}
-        <Line
-          points={points}
-          stroke="#000"
-          strokeWidth={2}
-          closed={isFinished}
-          fill={isFinished ? 'rgba(0, 0, 0, 0.1)' : undefined}
-        />
-
-        {/* 점들 그리기 */}
-        {Array.from({ length: points.length / 2 }).map((_, i) => (
-          <Circle
-            key={i}
-            x={points[i * 2]}
-            y={points[i * 2 + 1]}
-            radius={6}
-            fill={i === 0 ? '#f00' : '#000'}
-            onClick={i === 0 ? handlePointClick : undefined}
+        {polygons.map((polygon, index) => (
+          <Polygon
+            key={index}
+            points={polygon.points}
+            isFinished={polygon.isFinished}
+            setPolygons={setPolygons}
           />
         ))}
+
+        {/* 현재 그리고 있는 폴리곤 렌더링 */}
+        {currentPolygon.length > 0 && (
+          <>
+            <Line
+              points={currentPolygon}
+              stroke="red"
+              strokeWidth={2}
+              closed={false}
+            />
+            {/* 각 점들 렌더링 */}
+            {Array.from({ length: currentPolygon.length / 2 }).map((_, i) => (
+              <Circle
+                key={`point-${i}`}
+                x={currentPolygon[i * 2]}
+                y={currentPolygon[i * 2 + 1]}
+                radius={4}
+                fill="red"
+                draggable
+                onDragMove={(e) => {
+                  // 점 드래그 시 위치 업데이트
+                  const newPoints = [...currentPolygon];
+                  const { x, y } = getActualPosition({
+                    x: e.target.x(),
+                    y: e.target.y(),
+                  });
+                  newPoints[i * 2] = x;
+                  newPoints[i * 2 + 1] = y;
+                  setCurrentPolygon(newPoints);
+                }}
+              />
+            ))}
+          </>
+        )}
       </Layer>
     </Stage>
   );
