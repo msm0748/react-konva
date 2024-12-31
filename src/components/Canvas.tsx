@@ -44,13 +44,15 @@ export default function Canvas() {
     // 포인터 위치가 없으면 아무 작업도 수행하지 않습니다.
     if (!pointerPosition) return;
 
-    // 포인터 위치의 x, y 좌표를 추출합니다.
+    // 포인터 위치의 x, y 좌표를 추출하고 scale로 보정합니다.
     const { x, y } = pointerPosition;
+    const scaledX = (x - viewPos.x) / scale;
+    const scaledY = (y - viewPos.y) / scale;
 
-    // 현재 점이 2개 이상이고, 첫 번째 점과 마우스 업 위치 간의 거리가 10보다 작은 경우 다각형을 완성으로 설정합니다.
+    // 현재 점이 2개 이상이고, 첫 번째 점과 마우스 업 위치 간의 거리가 10보다 작은 경우
     if (points.length >= 2) {
       const firstPoint = points[0];
-      const distance = getDistance(firstPoint, { x, y });
+      const distance = getDistance(firstPoint, { x: scaledX, y: scaledY });
 
       if (distance < 10) {
         setIsComplete(true);
@@ -59,8 +61,8 @@ export default function Canvas() {
       }
     }
 
-    // 새로운 점을 현재 점들에 추가합니다.
-    setPoints([...points, { x: x - viewPos.x, y: y - viewPos.y }]);
+    // 새로운 점을 현재 점들에 추가할 때 scale로 보정된 좌표를 사용합니다.
+    setPoints([...points, { x: scaledX, y: scaledY }]);
   };
 
   return (

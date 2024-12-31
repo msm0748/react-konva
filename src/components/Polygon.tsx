@@ -23,7 +23,7 @@ export default function Polygon({
   setPoints,
   setAction,
 }: Props) {
-  const { viewPos, selectedTool } = useCanvasStore();
+  const { viewPos, selectedTool, scale } = useCanvasStore();
   const [dragStartIndex, setDragStartIndex] = useState<number | null>(null);
 
   /**
@@ -52,8 +52,8 @@ export default function Polygon({
 
     // viewPos를 제거하고 클릭 포인트에서 viewPos를 빼줍니다
     clickPoint = {
-      x: clickPoint.x - viewPos.x,
-      y: clickPoint.y - viewPos.y,
+      x: (clickPoint.x - viewPos.x) / scale,
+      y: (clickPoint.y - viewPos.y) / scale,
     };
 
     // 최소 거리, 삽입할 인덱스, 삽입할 점을 초기화합니다.
