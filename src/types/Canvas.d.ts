@@ -20,6 +20,12 @@ export interface Position {
   y: number;
 }
 
+export interface LinePoint {
+  distance: number;
+  position: Point;
+  param: number;
+}
+
 export type MouseCursor =
   | 'auto'
   | 'default'

@@ -1,106 +1,80 @@
 'use client';
 
-import { Layer, Line, Circle } from 'react-konva';
+import { Layer } from 'react-konva';
 import { useState } from 'react';
-import Konva from 'konva';
 import ImageLayer from './ImageLayer';
 import useCanvasStore from '@/stores/useCanvasStore';
 import Stage from './konva/Stage';
 import Polygon from './Polygon';
-import { IPolygon } from '@/types/Canvas';
+import { Action, Position } from '@/types/Canvas';
+import { KonvaEventObject } from 'konva/lib/Node';
+import { getDistance } from '@/utils/shapes/polygon';
 
 export default function Canvas() {
-  const { viewPos, scale } = useCanvasStore();
+  const { viewPos, scale, selectedTool } = useCanvasStore();
 
-  const [polygons, setPolygons] = useState<IPolygon[]>([]);
-  const [currentPolygon, setCurrentPolygon] = useState<number[]>([]);
+  console.log(selectedTool, 'selectedTool');
 
-  const getActualPosition = (pointerPosition: Konva.Vector2d) => {
-    return {
-      x: (pointerPosition.x - viewPos.x) / scale,
-      y: (pointerPosition.y - viewPos.y) / scale,
-    };
-  };
+  const [points, setPoints] = useState<Position[]>([]);
+  const [isComplete, setIsComplete] = useState<boolean>(false);
 
-  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Circle을 클릭한 경우 처리
-    if (e.target instanceof Konva.Circle) {
-      // 첫 번째 점을 클릭하면 폴리곤 완성
-      if (
-        currentPolygon.length >= 4 && // 최소 2개의 점이 있어야 함 (x,y 좌표 각각 2개)
-        Math.abs(e.target.x() - currentPolygon[0]) < 5 &&
-        Math.abs(e.target.y() - currentPolygon[1]) < 5
-      ) {
-        // 현재 폴리곤을 완성하고 저장
-        setPolygons((prev) => [
-          ...prev,
-          { points: [...currentPolygon], isFinished: true },
-        ]);
-        // 새로운 폴리곤 시작을 위해 초기화
-        setCurrentPolygon([]);
-        return;
-      }
+  const [action, setAction] = useState<Action>('none');
+
+  /**
+   * 스테이지에서 마우스 업 이벤트를 처리합니다.
+   * @param e 마우스 업 이벤트 객체.
+   */
+  const handleStageMouseDown = (e: KonvaEventObject<MouseEvent>): void => {
+    if (selectedTool !== 'polygon') return;
+
+    setAction('drawing');
+
+    // 타겟이 원(Circle)인 경우 또는 다각형이 완성된 경우 아무 작업도 수행하지 않습니다.
+    if (e.target.className === 'Circle' || isComplete) {
       return;
     }
 
+    // 이벤트가 발생한 스테이지를 가져옵니다.
     const stage = e.target.getStage();
+    // 스테이지가 없으면 아무 작업도 수행하지 않습니다.
     if (!stage) return;
 
+    // 마우스 포인터의 현재 위치를 가져옵니다.
     const pointerPosition = stage.getPointerPosition();
+    // 포인터 위치가 없으면 아무 작업도 수행하지 않습니다.
     if (!pointerPosition) return;
 
-    const { x, y } = getActualPosition(pointerPosition);
+    // 포인터 위치의 x, y 좌표를 추출합니다.
+    const { x, y } = pointerPosition;
 
-    // 현재 그리고 있는 폴리곤에 점 추가
-    setCurrentPolygon((prev) => [...prev, x, y]);
+    // 현재 점이 2개 이상이고, 첫 번째 점과 마우스 업 위치 간의 거리가 10보다 작은 경우 다각형을 완성으로 설정합니다.
+    if (points.length >= 2) {
+      const firstPoint = points[0];
+      const distance = getDistance(firstPoint, { x, y });
+
+      if (distance < 10) {
+        setIsComplete(true);
+        setAction('none');
+        return;
+      }
+    }
+
+    // 새로운 점을 현재 점들에 추가합니다.
+    setPoints([...points, { x: x - viewPos.x, y: y - viewPos.y }]);
   };
 
   return (
-    <Stage onClick={handleStageClick}>
+    <Stage onMouseDown={handleStageMouseDown}>
       <ImageLayer />
-      <Layer onClick={() => console.log('클릭')}>
-        {polygons.map((polygon, index) => (
-          <Polygon
-            key={index}
-            points={polygon.points}
-            isFinished={polygon.isFinished}
-            setPolygons={setPolygons}
-          />
-        ))}
-
-        {/* 현재 그리고 있는 폴리곤 렌더링 */}
-        {currentPolygon.length > 0 && (
-          <>
-            <Line
-              points={currentPolygon}
-              stroke="red"
-              strokeWidth={2}
-              closed={false}
-            />
-            {/* 각 점들 렌더링 */}
-            {Array.from({ length: currentPolygon.length / 2 }).map((_, i) => (
-              <Circle
-                key={`point-${i}`}
-                x={currentPolygon[i * 2]}
-                y={currentPolygon[i * 2 + 1]}
-                radius={4}
-                fill="red"
-                draggable
-                onDragMove={(e) => {
-                  // 점 드래그 시 위치 업데이트
-                  const newPoints = [...currentPolygon];
-                  const { x, y } = getActualPosition({
-                    x: e.target.x(),
-                    y: e.target.y(),
-                  });
-                  newPoints[i * 2] = x;
-                  newPoints[i * 2 + 1] = y;
-                  setCurrentPolygon(newPoints);
-                }}
-              />
-            ))}
-          </>
-        )}
+      <Layer>
+        <Polygon
+          points={points}
+          isComplete={isComplete}
+          setIsComplete={setIsComplete}
+          setPoints={setPoints}
+          action={action}
+          setAction={setAction}
+        />
       </Layer>
     </Stage>
   );
