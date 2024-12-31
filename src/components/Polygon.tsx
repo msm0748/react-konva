@@ -2,6 +2,7 @@
 
 import useCanvasStore from '@/stores/useCanvasStore';
 import { Action, Position } from '@/types/Canvas';
+import { calculateRelativeMousePosition } from '@/utils/calculateMousePosition';
 import { getDistanceFromPointToLine } from '@/utils/shapes/polygon';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { useState } from 'react';
@@ -23,7 +24,7 @@ export default function Polygon({
   setPoints,
   setAction,
 }: Props) {
-  const { viewPos, selectedTool, scale } = useCanvasStore();
+  const { selectedTool } = useCanvasStore();
   const [dragStartIndex, setDragStartIndex] = useState<number | null>(null);
 
   /**
@@ -46,15 +47,13 @@ export default function Polygon({
     if (!stage) return;
 
     // 클릭한 위치를 가져옵니다.
-    let clickPoint = stage.getPointerPosition();
+    const clickPoint = stage.getPointerPosition();
     // 클릭한 위치가 없으면 아무것도 하지 않고 함수를 종료합니다.
     if (!clickPoint) return;
 
-    // viewPos를 제거하고 클릭 포인트에서 viewPos를 빼줍니다
-    clickPoint = {
-      x: (clickPoint.x - viewPos.x) / scale,
-      y: (clickPoint.y - viewPos.y) / scale,
-    };
+    const [x, y] = calculateRelativeMousePosition(clickPoint);
+
+    const pos = { x, y };
 
     // 최소 거리, 삽입할 인덱스, 삽입할 점을 초기화합니다.
     let minDistance = Infinity;
@@ -69,7 +68,7 @@ export default function Polygon({
       const end = points[(i + 1) % points.length];
 
       // 클릭한 위치에서 선까지의 거리를 계산합니다.
-      const result = getDistanceFromPointToLine(clickPoint, start, end);
+      const result = getDistanceFromPointToLine(pos, start, end);
 
       // 계산된 거리가 최소 거리보다 작은 경우, 최소 거리와 삽입할 인덱스를 업데이트합니다.
       if (
