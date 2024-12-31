@@ -22,55 +22,46 @@ export default function Polygon({
   isComplete,
   setIsComplete,
   setPoints,
+  action,
   setAction,
 }: Props) {
-  const { selectedTool } = useCanvasStore();
+  const { selectedTool, scale } = useCanvasStore();
   const [dragStartIndex, setDragStartIndex] = useState<number | null>(null);
+  const [isDraggingShape, setIsDraggingShape] = useState(false);
+  const [lastMousePosition, setLastMousePosition] = useState<Position | null>(
+    null
+  );
 
-  /**
-   * 선을 클릭했을 때 발생하는 이벤트 핸들러.
-   * 다각형이 완성된 상태에서 선을 클릭하면, 클릭한 위치에 새로운 점을 추가합니다.
-   * @param e KonvaEventObject<MouseEvent> 이벤트 객체.
-   */
+  console.log(points, 'points');
+
   const handleLineMouseDown = (e: KonvaEventObject<MouseEvent>): void => {
     if (selectedTool !== 'select') return;
 
-    // 이벤트 전파를 중단합니다.
     e.cancelBubble = true;
 
-    // 다각형이 완성되지 않았으면 아무것도 하지 않고 함수를 종료합니다.
+    if (isDraggingShape) return;
+
     if (!isComplete) return;
 
-    // 클릭된 선의 스테이지를 가져옵니다.
     const stage = e.target.getStage();
-    // 스테이지가 없으면 아무것도 하지 않고 함수를 종료합니다.
     if (!stage) return;
 
-    // 클릭한 위치를 가져옵니다.
     const clickPoint = stage.getPointerPosition();
-    // 클릭한 위치가 없으면 아무것도 하지 않고 함수를 종료합니다.
     if (!clickPoint) return;
 
     const [x, y] = calculateRelativeMousePosition(clickPoint);
-
     const pos = { x, y };
 
-    // 최소 거리, 삽입할 인덱스, 삽입할 점을 초기화합니다.
     let minDistance = Infinity;
     let insertIndex = -1;
     let insertPoint: Position | null = null;
 
-    // 모든 점을 순회합니다.
     for (let i = 0; i < points.length; i++) {
-      // 시작점과 끝점을 정의합니다.
       const start = points[i];
-
       const end = points[(i + 1) % points.length];
 
-      // 클릭한 위치에서 선까지의 거리를 계산합니다.
       const result = getDistanceFromPointToLine(pos, start, end);
 
-      // 계산된 거리가 최소 거리보다 작은 경우, 최소 거리와 삽입할 인덱스를 업데이트합니다.
       if (
         result.distance < minDistance &&
         result.param >= 0 &&
@@ -82,23 +73,25 @@ export default function Polygon({
       }
     }
 
-    // 최소 거리가 10보다 작은 경우, 즉 클릭한 위치가 선에 가까운 경우, 새로운 점을 삽입합니다.
     if (minDistance < 10 && insertPoint) {
-      // 새로운 점을 삽입할 위치에 삽입합니다.
       const newPoints = [...points];
       newPoints.splice(insertIndex, 0, insertPoint);
       setPoints(newPoints);
-      // 드래그 시작 인덱스를 업데이트합니다.
       setDragStartIndex(insertIndex);
       setAction('updating');
+    } else if (isComplete) {
+      const stage = e.target.getStage();
+      if (stage) {
+        const pos = stage.getPointerPosition();
+        if (pos) {
+          setIsDraggingShape(true);
+          setAction('updating');
+          setLastMousePosition({ x: pos.x, y: pos.y });
+        }
+      }
     }
   };
 
-  /**
-   * 원을 클릭했을 때 발생하는 이벤트 핸들러.
-   * 첫 번째 원을 클릭하고 점이 2개 이상일 때 다각형을 완성으로 설정합니다.
-   * @param index 클릭된 원의 인덱스.
-   */
   const handleCircleMouseDown = (index: number): void => {
     if (index === 0 && points.length >= 2) {
       setIsComplete(true);
@@ -110,40 +103,62 @@ export default function Polygon({
     setAction('updating');
   };
 
-  // 드래그 이동 이벤트 핸들러
   const handleDragMove = (
-    e: KonvaEventObject<DragEvent>, // 드래그 이벤트 객체
-    index: number // 드래그하는 점의 인덱스
+    e: KonvaEventObject<DragEvent>,
+    index: number
   ): void => {
-    const point = e.target; // 드래그 대상 점
-    const newPoints = [...points]; // 기존 점들을 복사
+    const point = e.target;
+    const newPoints = [...points];
     newPoints[index] = {
-      // 드래그하는 점의 위치를 업데이트
       x: point.x(),
       y: point.y(),
     };
-    setPoints(newPoints); // 점들을 업데이트
+    setPoints(newPoints);
   };
 
-  /**
-   * 드래그가 끝났을 때 호출되는 이벤트 핸들러.
-   * 드래그가 끝난 점의 위치를 업데이트하고, 드래그 상태를 비활성화합니다.
-   * @param e 드래그 이벤트 객체.
-   * @param index 드래그가 끝난 점의 인덱스.
-   */
   const handleDragEnd = (
     e: KonvaEventObject<DragEvent>,
     index: number
   ): void => {
-    const point = e.target; // 드래그가 끝난 점을 가져옵니다.
-    const newPoints = [...points]; // 기존 점들을 복사합니다.
+    const point = e.target;
+    const newPoints = [...points];
     newPoints[index] = {
-      // 드래그가 끝난 점의 위치를 업데이트합니다.
       x: point.x(),
       y: point.y(),
     };
-    setPoints(newPoints); // 업데이트된 점들을 설정합니다.
+    setPoints(newPoints);
     setAction('none');
+  };
+
+  const handleMouseMove = (e: KonvaEventObject<MouseEvent>): void => {
+    if (!isDraggingShape || !lastMousePosition) return;
+
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
+
+    // scale로 나누어 확대/축소에 따른 이동 거리를 보정
+    const dx = (pos.x - lastMousePosition.x) / scale;
+    const dy = (pos.y - lastMousePosition.y) / scale;
+
+    // 모든 점들을 보정된 거리만큼 이동
+    const newPoints = points.map((point) => ({
+      x: point.x + dx,
+      y: point.y + dy,
+    }));
+
+    setPoints(newPoints);
+    setLastMousePosition({ x: pos.x, y: pos.y });
+  };
+
+  const handleMouseUp = (): void => {
+    if (isDraggingShape) {
+      setIsDraggingShape(false);
+      setLastMousePosition(null);
+      setAction('none');
+    }
   };
 
   return (
@@ -153,7 +168,10 @@ export default function Polygon({
         stroke="#000000"
         strokeWidth={2}
         closed={isComplete}
+        fill={isComplete ? 'rgba(0, 0, 0, 0.1)' : undefined}
         onMouseDown={handleLineMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         hitStrokeWidth={10}
         listening={true}
       />
@@ -164,7 +182,7 @@ export default function Polygon({
           y={point.y}
           radius={6}
           fill={index === 0 ? '#ff0000' : '#000000'}
-          draggable={selectedTool === 'select'}
+          draggable={selectedTool === 'select' && !isDraggingShape}
           onDragStart={handleDragStart}
           onDragMove={(e) => handleDragMove(e, index)}
           onDragEnd={(e) => handleDragEnd(e, index)}
@@ -173,14 +191,11 @@ export default function Polygon({
             index === dragStartIndex
               ? (node) => {
                   if (node) {
-                    // 노드를 드래그 시작합니다.
                     node.startDrag();
-                    // 드래그 시작 인덱스를 null로 설정합니다.
                     setDragStartIndex(null);
                   }
                 }
-              : // 그렇지 않을 때는 ref를 undefined로 설정합니다.
-                undefined
+              : undefined
           }
         />
       ))}
